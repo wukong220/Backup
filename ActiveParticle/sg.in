@@ -1,0 +1,47 @@
+# TEST single mobile colloid in active bath
+
+echo                screen
+units               lj
+atom_style          hybrid bond dipole
+dimension           2
+boundary            p p p
+
+read_data           single_club.data
+#read_restart        bkup.2
+
+group               Nr  type 1                  #齿轮
+group               Na  type 2			#活性粒子
+#group               No  type 3
+
+neighbor            0.3 bin
+neigh_modify        delay 0  exclude group Nr  Nr
+
+pair_style          hybrid/overlay  lj/cut 1.12246
+pair_coeff          *  *       lj/cut 1.0 1.0 
+
+reset_timestep      0
+
+variable            l equal 30024
+variable            a equal 7324
+variable            r equal 9818
+
+#fix                 02 Nr	rigid  molecule langevin  1.0  1.0  0.01  $l force * off off off  infile rigid.data
+fix                 21 Nr       move rotate 0.0 0.0 0.0 0.0 0.0 1.0 209
+fix                 41 Na	langevin  1.0  1.0  0.1  $a  zero yes
+fix                 51 Na	activeforce	 0.0
+fix                 12 Na       nve/rot  0.001  $r
+fix                 61 all   	enforce2d
+timestep            0.001
+
+dump                 7 Nr custom 500000 Wall.lammpstrj id type x y xu yu
+run                 500000
+
+dump                35 all custom 1000 xy.lammpstrj id type x y
+dump                36 Na custom 1000 Act.lammpstrj id x y vx vy mux muy
+dump                37 Nr custom 1000 Rat.lammpstrj id x y vx vy
+restart             10000 bkup.1 bkup.2
+run                 5000000
+thermo              50000
+
+write_restart       min2.data
+
