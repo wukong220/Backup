@@ -1,0 +1,44 @@
+echo both
+
+units          lj
+dimension      2
+boundary       p p p
+
+atom_style     hybrid angle dipole
+read_data      D35.data
+
+
+pair_style     lj/cut 1.12246
+pair_coeff     *  *   1.0   1.0
+pair_modify    shift yes
+
+
+group actvp    type 1 3
+group wall     type 2
+neighbor       0.3  bin
+neigh_modify   every 1 delay 5 check yes
+
+fix            21   actvp    nve/rot 0.001  32145
+fix            22   actvp    langevin 1.0  1.0  0.1  54321  zero  yes
+fix            23   actvp    activeforce 5.0
+
+fix            30   all      enforce2d
+
+compute        1   actvp temp/com
+run            20000000
+
+thermo          100
+thermo_style    custom  step atoms ke temp c_1 vol
+
+timestep        0.001
+
+restart         10000   equ.1  equ.2
+
+dump            1  all  custom 10000  xy.lammpstrj  id  type  x y  
+dump_modify     1  sort id
+dump            2  actvp  custom 10000  act.lammpstrj  id   x y vx vy 
+dump_modify     2  sort id
+dump            3  actvp  custom 10000  rat.lammpstrj  id   x y mux muy 
+dump_modify     3  sort id
+
+run             50000000

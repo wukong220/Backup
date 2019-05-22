@@ -1,0 +1,44 @@
+# self-assembly of + shape particle
+ 
+  echo               screen
+  units              lj
+  dimension          2
+  boundary           p p p
+  
+  atom_style         hybrid angle dipole  
+  read_restart       equ.10000
+  
+  reset_timestep      0
+  
+  pair_style          lj/cut  1.12246
+  pair_coeff          * *     10.0 1.0 
+  pair_modify         shift    yes
+  
+  neighbor           0.3  bin 
+
+  group              cross      type  1  2
+  group              center     type  1
+  neigh_modify       every  1  delay  10  check  yes  exclude  molecule  all
+
+  
+  variable           s   equal    round(x[500]+1000)*100
+
+  fix                20  all     rigid molecule   langevin  0.01  0.01  0.1  $s+20
+#  fix                21  all     viscous  10   # n_d  4  4 #scale = 2*rod
+  fix                30  center    activeforce  3.0
+  fix                40  all     enforce2d
+  
+#  fix                50  all deform 1 x final -50.0 50.0 y final -50.0 50.0 units box  
+  
+  timestep           0.001
+  thermo             1000
+
+  restart           1000  equ.1   equ.101
+  
+  dump              1  all  custom  10000  crosskBT0.01_f03_1W.lammpstrj  id  type  x  y  
+  dump              2  center  custom  10000  centerkBT0.01_f03_1W.lammpstrj  id  type  xu  yu  mux  muy
+  dump_modify       1 sort id
+  dump_modify       2 sort id
+
+  run               30000000
+ 

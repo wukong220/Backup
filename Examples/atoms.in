@@ -1,0 +1,67 @@
+# TEST active partices diffuse
+
+echo                screen
+units               lj
+atom_style          hybrid sphere angle dipole
+atom_modify         sort 557 0.3
+bond_style          harmonic
+angle_style         harmonic
+dimension           2
+boundary            p p p
+read_data           atoms.data
+#read_restart        ini.dat
+
+
+reset_timestep    0
+comm_modify vel yes
+
+
+group               Na  type 1		#act
+group               Np  type 2		#passive
+group               Nw  type 3	    #wall
+group               Nc  type 4	    #chain
+group               Nf  type 3 4
+group               Ne  type 1 2
+group               Nd  type 1 2 3 4
+
+bond_coeff 1 80.0 1.0
+
+angle_coeff 1 0.0 150.0
+
+#pair_style gran/hooke 4000.0 NULL 100.0 NULL 0.5 1
+#pair_coeff * * 
+
+pair_style lj/cut 1.12246
+pair_coeff * * 1.0 1.0
+
+
+
+neighbor            0.3 bin		
+neigh_modify        delay 0 every 1 check yes
+#neigh_modify       every  1  delay  10  check  yes
+
+timestep            0.001
+	
+fix		            13 Na	   activeforce 10.0	
+#fix                 14 Na 	   nve/rot 0.001 218271		
+fix                 17 Na          langevin 1.0  1.0  0.1  629981
+#fix                 16 Nf          freeze
+#fix                 16 Nf          rigid single force 1 off off off torque 1 off off off  
+fix                 12 Nc          nve 
+fix                 18 Ne          rigid molecule          
+fix                 15 all         enforce2d
+
+
+dump                21 Nd custom 1000 all.cv.lammpstrj id type x y vx vy
+dump_modify         21 sort id 
+#dump                22 Na custom 1000 act.cvf.lammpstrj id x y #type x y vx vy #fx fy
+#dump_modify         22 sort id
+#dump                23 Nw custom 1000 passive.cvf.lammpstrj id type x y vx vy #fx fy
+#dump_modify         23 sort id
+
+thermo              5000
+restart             10000 bkup.1 bkup.2
+run                 5000000
+
+write_restart       min2.data
+
