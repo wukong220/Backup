@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <cmath>
 #include <vector>
 #include <time.h>
@@ -18,8 +19,8 @@ const double PI=3.1415926535897;	//pi
 const int MID_chain = 1;			//Mollecule ID of chains
 const int MID_obs = 2 ;				//Mollecule ID of obstacles
 
-const double L_box = 70.0;					//Lengh of the box
-const double n_box = 3;						//For dense system
+const double L_box = 100.0;					//Lengh of the box
+const double n_box = 2;						//For dense system
 
 //chain setup
 const double rad = 0.5;						//Radius of the chain
@@ -72,6 +73,12 @@ int main()
 {
 	Ranq2 Rand((unsigned int)(time(NULL)));
 	
+	string filename;
+	stringstream ss;
+	ss << N_chain;
+	ss >> filename;
+	filename += "N_chain.data";
+	
 	double** chain = new double* [Num_beeds];
 	for (int i = 0; i < Num_beeds; i++)
 			chain[i] = new double[2];
@@ -120,7 +127,6 @@ int main()
 			Type_chain[i] = 2;
 	}
 
-	string filename = "chain.data";
 	ofstream fout(filename);
 
 	now(&fout);
