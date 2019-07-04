@@ -1,5 +1,47 @@
 #!/bin/bash
 
+# input:  00*.init.restart 
+# output: 00*.init_chain.lammpstrj 
+#         00*.lammpstrj 00*u.lammpstrj 00*f.lammpstrj
+#         00*.a.restart 00*.b.restart  00*.end.restart
+#         00*_msd.txt   00*.log        00*.data
+
+dir=$(cd `dirname $0`;pwd)
+Phi=0.2 #0.1
+R=1.0
+D=$(echo "$R * 2.0" | bc)
+Kb=0.0
+for S in 4.0 #1.0 2.0 3.0 4.0 5.0
+do 
+   for Fa in 15.0 50.0
+   do
+      for t in 001 #002 003 004 005 006 007 008 009 010\
+               #011 012 013 014 015 016 017 018 019 020
+      do   
+         title="${Phi}Phi_${S}S_${D}D"
+         a=$(echo "$S * $D" | bc)
+         
+         if [ "$1" == "test" ]
+         then
+            sed "19s/2.0/${S}/;20,27s/0.5/${R}/;37s/1.0/${Fa}/;38s/1.0/${Kb}/;\
+            72s/2.0/$a/;72s/1.0/$D/g;66,204s/001/$t/g;203d" act.in > ${t}.act.test
+            mpirun -np 1 lmp_wk -l $t.log -i $t.act.test
+         else
+            sed "19s/2.0/${S}/;20,27s/0.5/${R}/;37s/1.0/${Fa}/;38s/1.0/${Kb}/;\
+            72s/2.0/$a/;72s/1.0/$D/g;66,204s/001/$t/g" act.in > ${t}.act.in
+            mkdir ${dir}/${title}/
+            mkdir ${dir}/${title}/${Kb}Kb_${Fa}Fa/
+            mv ${t}.act.in ${dir}/${title}/${Kb}Kb_${Fa}Fa/
+            cd ${dir}/${title}/${Kb}Kb_${Fa}Fa/
+            nohup mpirun -np 1 lmp_wk -l $t.log -i $t.act.in > $t.data &
+            echo "nohup mpirun -np 1 lmp_wk -l $t.log -i $t.act.in > $t.data &"
+            cd ../../
+         fi
+       done  
+   done
+done
+
+:<<BLOCK`
 # for t in {0..9}
 #for t in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
 #do
@@ -41,4 +83,4 @@ do
      nohup mpirun -np 1 lmp_wk -l $t.log -i $t.act.in > $t.data &                                        #nohup
      echo "nohup mpirun -np 1 lmp_wk -l $t.log -i $t.act.in > $t.data &"
 done
-
+`BLOCK
