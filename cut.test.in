@@ -1,0 +1,102 @@
+# SRD diffusion demo - ellipsoids
+
+units		lj
+atom_style	ellipsoid
+atom_modify	first big
+dimension	2
+
+# create big ellipsoidal particles
+
+#lattice		sq 0.14
+region		box block 0 10 0 10 -0.5 0.5
+create_box	2 box
+create_atoms	1 single 5 5 0
+
+set		type 1 mass 1.0
+set		type 1 shape 2.0 1.0 1.0
+group		big type 1
+set		group big quat/random 29898
+
+#velocity	big create 1.44 87287 loop geom
+
+# equilibrate big particles
+
+#pair_style      gayberne 1.0 3.0 1.0 4.0
+#pair_coeff      1 1 1.0 1.0 1 1 1 1 1 1
+#pair_coeff      1 2 1.0 1.0 1 1 1 1 1 1 0.0
+#pair_coeff      2 2 1.0 1.0 1 1 1 1 1 1 0.0
+
+neighbor	0.3 bin
+neigh_modify	delay 0 every 1 check yes
+
+#fix		1 big nve/asphere
+#fix		2 all enforce2d
+
+compute		rot big temp/asphere
+
+#dump		1 all custom 10 dump.ellipsoid.equil id type x y z &
+#		  quatw quati quatj quatk
+
+thermo_style	custom step temp c_rot epair etotal press
+thermo		100
+
+#run		1000
+
+#undump		1
+#unfix		1
+#unfix		2
+
+# add small particles as hi density lattice
+
+region		plane block INF INF INF INF -0.001 0.001 units box
+lattice		sq 120.0
+create_atoms	2 region plane
+
+set	    	type 2 mass 0.01
+group		small type 2
+velocity	small create 1.0 593849 loop geom
+
+# delete overlaps
+# must set 1-2 cutoff to non-zero value
+pair_style      gayberne 1.0 3.0 1.0 4.0
+pair_coeff      1 1 1.0 1.0 1 1 1 1 1 1 0.0
+pair_coeff      1 2 1.0 1.0 1 1 1 1 0.25 0.25 
+pair_coeff      2 2 1.0 1.0 1 1 1 1 1 1 0.0
+
+#pair_style	lj/cut 4
+#pair_coeff	1 1 1.0 1.0 0.0
+#pair_coeff	2 2 1.0 1.0 0.0
+#pair_coeff	1 2 1.0 2.0
+
+pair_modify shift yes
+neigh_modify	one 10000
+
+#delete_atoms	overlap 0.5 small big
+minimize      1.0e-4 1.0e-6 1000 10000
+#min_modify     line forcezero
+# SRD run
+
+reset_timestep	0
+
+neighbor	    0.3 bin
+neigh_modify	delay 0 every 1 check yes
+
+comm_modify	mode multi group big vel yes
+neigh_modify	include big
+
+compute	     orient all property/atom quati quatj quatk quatw
+compute		shape all property/atom shapex shapey shapez
+dump		1 all custom 10 test.ellipsoid.lammpstrj id type x y z &
+			c_orient[1] c_orient[2] c_orient[3] c_orient[4] c_shape[1] c_shape[2] c_shape[3] 
+dump_modify     1 sort id 
+
+
+timestep	0.0005
+
+fix      	13 small langevin 0.1 0.1 0.001 3243523 zero yes
+#fix	    	11 small nve/asphere 
+fix         12 small nve
+fix         10 all enforce2d
+thermo		10
+run         500
+
