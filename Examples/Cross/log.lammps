@@ -1,0 +1,6 @@
+LAMMPS (30 Oct 2019)
+# self-assembly of + shape particle
+
+  echo               screen
+ERROR: Invalid LAMMPS restart file (../read_restart.cpp:1216)
+Last command:   read_restart       equ.10000

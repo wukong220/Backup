@@ -14,7 +14,7 @@
   pair_coeff          * *     10.0 1.0 
   pair_modify         shift    yes
   
-  neighbor           0.3  bin 
+  neighbor           0.3  bin
 
   group              cross      type  1  2
   group              center     type  1
